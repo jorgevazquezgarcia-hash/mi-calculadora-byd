@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#102a43">
+<title>Mi carga BYD</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f9;color:#102a43;
+font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+main{max-width:480px;margin:auto;padding:22px 16px}
+header{background:#102a43;color:white;padding:22px;
+border-radius:22px;margin-bottom:18px}
+h1{font-size:25px;margin:0 0 8px}
+p{line-height:1.45}
+.card{background:white;padding:20px;border-radius:20px;
+margin-bottom:15px;box-shadow:0 3px 14px #102a4310}
+label{display:block;font-weight:600;margin-bottom:10px}
+.value{font-size:27px;font-weight:750}
+input[type=range]{width:100%;accent-color:#087e8b;margin:12px 0}
+.options{display:grid;gap:10px}
+.option{display:flex;align-items:center;gap:10px;
+padding:12px;background:#f1f5f9;border-radius:12px}
+input[type=radio]{accent-color:#087e8b}
+.result{background:#dff6f0;border-radius:16px;padding:18px}
+.result h2{font-size:36px;margin:8px 0;color:#087e8b}
+.line{display:flex;justify-content:space-between;gap:12px;
+margin-top:14px}
+small{color:#526579;line-height:1.5}
+button{width:100%;border:0;border-radius:12px;padding:15px;
+background:#102a43;color:white;font-size:16px;font-weight:650}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div>⚡ CALCULADORA DE CARGA</div>
+  <h1>Mi BYD ATTO 2 Boost</h1>
+  <p>Batería de 45,1 kWh · Wallbox Vestel</p>
+  <small style="color:#d7e8f5">Inicio habitual: 00:05 · Casa: 4,5 kW</small>
+</header>
+
+<section class="card">
+  <label for="current">Batería actual</label>
+  <div class="value"><span id="currentVal">30</span>%</div>
+  <input id="current" type="range" min="0" max="100"
+    step="5" value="30">
+  <label for="target">Porcentaje deseado</label>
+  <div class="value"><span id="targetVal">80</span>%</div>
+  <input id="target" type="range" min="0" max="100"
+    step="5" value="80">
+</section>
+
+<section class="card">
+  <label>Potencia media estimada</label>
+  <div class="options">
+    <label class="option"><input type="radio" name="power"
+      value="1.5"> 1,5 kW · Consumo alto en casa</label>
+    <label class="option"><input type="radio" name="power"
+      value="2.5" checked> 2,5 kW · Estimación prudente</label>
+    <label class="option"><input type="radio" name="power"
+      value="3.5"> 3,5 kW · Bastante margen</label>
+    <label class="option"><input type="radio" name="power"
+      value="4"> 4 kW · Poco consumo en casa</label>
+  </div>
+  <p>
+    <label for="eff">Eficiencia estimada:
+      <span id="effVal">90</span>%
+    </label>
+    <input id="eff" type="range" min="80" max="100"
+      value="90">
+  </p>
+</section>
+
+<section class="card">
+  <div class="result">
+    <small>TIEMPO ESTIMADO DE CARGA</small>
+    <h2 id="duration">9 h 1 min</h2>
+    <div class="line"><span>Energía necesaria</span>
+      <strong id="energy">22,6 kWh</strong></div>
+    <div class="line"><span>Inicio de carga</span>
+      <strong>00:05</strong></div>
+    <div class="line"><span>Finalización aprox.</span>
+      <strong id="finish">09:06</strong></div>
+  </div>
+  <p><small>Estimación orientativa. La potencia real varía
+  según el consumo de la vivienda y el control dinámico
+  del wallbox.</small></p>
+  <button id="copy">Copiar resultado</button>
+  <p id="message" aria-live="polite"></p>
+</section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+function calculate(){
+  let current = +$('current').value;
+  let target = Math.max(current,+$('target').value);
+  $('target').value = target;
+  $('currentVal').textContent = current;
+  $('targetVal').textContent = target;
+  $('effVal').textContent = $('eff').value;
+
+  let power = +document.querySelector(
+    'input[name="power"]:checked').value;
+  let energy = 45.1*(target-current)/100;
+  let minutes = Math.ceil(energy/(power*(+$('eff').value/100))*60);
+  let finish = (5+minutes)%1440;
+
+  $('energy').textContent = energy.toLocaleString('es-ES',
+    {maximumFractionDigits:1})+' kWh';
+  $('duration').textContent =
+    Math.floor(minutes/60)+' h '+minutes%60+' min';
+  $('finish').textContent =
+    String(Math.floor(finish/60)).padStart(2,'0')+':'+
+    String(finish%60).padStart(2,'0');
+}
+document.querySelectorAll('input').forEach(el =>
+  el.addEventListener('input',calculate));
+$('copy').addEventListener('click',async()=>{
+  const result = `BYD ATTO 2 Boost
+Carga: ${$('current').value}% → ${$('target').value}%
+Inicio: 00:05
+Duración: ${$('duration').textContent}
+Fin: ${$('finish').textContent}
+Energía: ${$('energy').textContent}`;
+  try{
+    await navigator.clipboard.writeText(result);
+    $('message').textContent='Resultado copiado.';
+  }catch{
+    $('message').textContent=result;
+  }
+});
+calculate();
+</script>
+</body>
+</html>
